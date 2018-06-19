@@ -1,0 +1,21 @@
+- name: "sites : generate site config"
+  template:
+    src: apache-site.conf.j2
+    dest: /etc/apache2/sites-available/{{ item }}.conf
+    trim_blocks: no
+  become: yes
+  with_items: "{{ django_sites.keys() }}"
+
+- name: "sites : activate site config"
+  file:
+    src: ../sites-available/{{ item }}.conf
+    dest: /etc/apache2/sites-enabled/{{ item }}.conf
+    state: link
+  become: true
+  with_items: "{{ django_sites.keys() }}"
+
+- name: "sites : reload apache2"
+  service:
+    name: apache2
+    state: reloaded
+  become: true

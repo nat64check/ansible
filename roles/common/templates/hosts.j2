@@ -1,0 +1,13 @@
+127.0.0.1   localhost
+::1         localhost ip6-localhost ip6-loopback
+
+ff02::1     ip6-allnodes
+ff02::2     ip6-allrouters
+
+{% for address in lookup('dig', inventory_hostname, 'qtype=A', wantlist=True) %}
+{{ address }} {{ inventory_hostname }} {{ inventory_hostname_short }}
+{% endfor %}
+
+{% for address in lookup('dig', inventory_hostname, 'qtype=AAAA', wantlist=True) %}
+{{ address }} {{ inventory_hostname }} {{ inventory_hostname_short }}
+{% endfor %}

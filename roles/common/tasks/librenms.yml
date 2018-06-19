@@ -1,0 +1,188 @@
+- name: "librenms : install requirements"
+  package:
+    name:
+    - git
+    - xinetd
+    state: present
+  become: true
+
+- name: "librenms : make directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: 0755
+  become: true
+  with_items:
+  - /opt/librenms-agent
+  - /usr/lib/check_mk_agent/plugins
+  - /usr/lib/check_mk_agent/local
+
+- name: "librenms : install agent"
+  git:
+    repo: https://github.com/librenms/librenms-agent.git
+    dest: /opt/librenms-agent
+    force: yes
+  tags: upgrade
+
+- name: "librenms : link agent"
+  file:
+    src: /opt/librenms-agent/check_mk_agent
+    dest: /usr/bin/check_mk_agent
+    state: link
+  become: true
+
+- name: "librenms : activate agent"
+  file:
+    src: /opt/librenms-agent/check_mk_xinetd
+    dest: /etc/xinetd.d/check_mk
+    state: link
+  become: true
+  notify: "restart xinetd"
+
+- name: "librenms : activate agent modules"
+  file:
+    src: /opt/librenms-agent/agent-local/{{ item }}
+    dest: /usr/lib/check_mk_agent/local/{{ item }}
+    state: link
+  become: true
+  with_items: "{{ librenms.agents }}"
+
+- name: "librenms : configure snmp extensions"
+  file:
+    name: "/opt/librenms-agent/snmp/{{ librenms.snmp_extensions[item].script }}"
+    mode: 0755
+  become: true
+  with_items: "{{ librenms.snmp_extensions.keys() }}"
+  tags: upgrade
+
+- name: "librenms : detect iptables firewall"
+  stat:
+    path: /etc/sysconfig/iptables
+  register: iptables_config
+
+- block:
+  - name: "librenms : iptables : open firewall for SNMP over IPv4"
+    lineinfile:
+      path: /etc/sysconfig/iptables
+      line: "-A RH-Firewall-1-INPUT -s {{ item }} -m udp -p udp --dport 161 -j ACCEPT"
+      insertbefore: "-j REJECT"
+    with_items: "{{ lookup('dig', librenms.server, 'qtype=A', wantlist=True) }}"
+    notify: "reload iptables"
+
+  - name: "librenms : iptables : open firewall for SNMP over IPv6"
+    lineinfile:
+      path: /etc/sysconfig/ip6tables
+      line: "-A INPUT -s {{ item }} -m udp -p udp --dport 161 -j ACCEPT"
+      insertbefore: "-j REJECT"
+    with_items: "{{ lookup('dig', librenms.server, 'qtype=AAAA', wantlist=True) }}"
+    notify: "reload ip6tables"
+
+  - name: "librenms : iptables : open firewall for agent over IPv4"
+    lineinfile:
+      path: /etc/sysconfig/iptables
+      line: "-A RH-Firewall-1-INPUT -s {{ item }} -m tcp -p tcp --dport 6556 -j ACCEPT"
+      insertbefore: "-j REJECT"
+    with_items: "{{ lookup('dig', librenms.server, 'qtype=A', wantlist=True) }}"
+    notify: "reload iptables"
+
+  - name: "librenms : iptables : open firewall for agent over IPv6"
+    lineinfile:
+      path: /etc/sysconfig/ip6tables
+      line: "-A INPUT -s {{ item }} -m tcp -p tcp --dport 6556 -j ACCEPT"
+      insertbefore: "-j REJECT"
+    with_items: "{{ lookup('dig', librenms.server, 'qtype=AAAA', wantlist=True) }}"
+    notify: "reload ip6tables"
+
+  become: true
+  when: iptables_config.stat.exists
+
+- name: "librenms : detect firewalld"
+  stat:
+    path: /etc/firewalld/zones/public.xml
+  become: true
+  register: firewalld_config
+
+- block:
+  - name: "librenms : firewalld : copy firewall service configuration file"
+    copy:
+      src: files/firewalld-check-mk.xml
+      dest: /etc/firewalld/services/check-mk.xml
+    register: firewalld_service
+
+  - name: "librenms : firewalld : reload firewall"
+    command: firewall-cmd --reload
+    when: firewalld_service.changed
+
+  - name: "librenms : firewalld : open firewall for SNMP over IPv4"
+    firewalld:
+      rich_rule: 'rule family="ipv4" source address="{{ item }}" service name="snmp" accept'
+      state: enabled
+      permanent: true
+      immediate: true
+    with_flattened:
+    - "{{ lookup('dig', librenms.server, 'qtype=A', wantlist=True) }}"
+
+  - name: "librenms : firewalld : open firewall for SNMP over IPv6"
+    firewalld:
+      rich_rule: 'rule family="ipv6" source address="{{ item }}" service name="snmp" accept'
+      state: enabled
+      permanent: true
+      immediate: true
+    with_flattened:
+    - "{{ lookup('dig', librenms.server, 'qtype=AAAA', wantlist=True) }}"
+
+  - name: "librenms : firewalld : open firewall for agent over IPv4"
+    firewalld:
+      rich_rule: 'rule family="ipv4" source address="{{ item }}" service name="check-mk" accept'
+      state: enabled
+      permanent: true
+      immediate: true
+    with_flattened:
+    - "{{ lookup('dig', librenms.server, 'qtype=A', wantlist=True) }}"
+
+  - name: "librenms : firewalld : open firewall for agent over IPv6"
+    firewalld:
+      rich_rule: 'rule family="ipv6" source address="{{ item }}" service name="check-mk" accept'
+      state: enabled
+      permanent: true
+      immediate: true
+    with_flattened:
+    - "{{ lookup('dig', librenms.server, 'qtype=AAAA', wantlist=True) }}"
+
+  become: true
+  when: firewalld_config.stat.exists
+
+- name: "librenms : check if server is known"
+  uri:
+    url: "https://{{ librenms.server }}/api/v0/devices/{{ inventory_hostname }}"
+    return_content: yes
+    headers:
+      X-Auth-Token: "{{ librenms.token }}"
+  delegate_to: localhost
+  register: librenms_check
+  changed_when: false
+  failed_when: librenms_check.json.status != 'ok'
+
+- name: "librenms : add server"
+  uri:
+    method: POST
+    url: "https://{{ librenms.server }}/api/v0/devices"
+    return_content: yes
+    headers:
+      X-Auth-Token: "{{ librenms.token }}"
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      version: "v3"
+      authlevel: "authPriv"
+      authname: "{{ librenms.snmp_user }}"
+      authalgo: "SHA"
+      authpass: "{{ snmp.users[librenms.snmp_user].password }}"
+      cryptoalgo: "AES"
+      cryptopass: "{{ snmp.users[librenms.snmp_user].password }}"
+  delegate_to: localhost
+  when: not librenms_check.json.devices[0].device_id | default(false)
+  changed_when: true
+  register: librenms_add
+  failed_when: librenms_add.json.status != 'ok'

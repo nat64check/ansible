@@ -1,0 +1,94 @@
+- name: "sshd : update /etc/issue"
+  template:
+    src: templates/{{ item }}.j2
+    dest: /etc/{{ item }}
+  become: true
+  with_items:
+  - issue
+  - issue.net
+  tags: issue
+
+- name: "sshd : require protocol version 2"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?Protocol "
+    line: "Protocol 2"
+  become: true
+
+- name: "sshd : allow root login only with pubkey auth"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?PermitRootLogin "
+    line: "PermitRootLogin without-password"
+  become: true
+
+# Based on https://wiki.mozilla.org/Security/Guidelines/OpenSSH
+
+- name: "sshd : set allowed KexAlgorithms"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?KexAlgorithms "
+    line: "KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256"
+  become: true
+
+- name: "sshd : set allowed Ciphers"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?Ciphers "
+    line: "Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"
+  become: true
+
+- name: "sshd : set allowed MACs"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?MACs "
+    line: "MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com"
+  become: true
+
+- name: "sshd : use privilege separation sandbox"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?UsePrivilegeSeparation "
+    line: "UsePrivilegeSeparation sandbox"
+  become: true
+
+- name: "sshd : don't allow GSSAPIAuthentication"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?GSSAPIAuthentication "
+    line: "GSSAPIAuthentication no"
+  become: true
+
+- name: "sshd : disable X11Forwarding"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?X11Forwarding "
+    line: "X11Forwarding no"
+  become: true
+
+- name: "sshd : enable TCPKeepAlive"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?TCPKeepAlive "
+    line: "TCPKeepAlive yes"
+  become: true
+
+- name: "sshd : enable Banner"
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "(?i)^#?Banner "
+    line: "Banner /etc/issue.net"
+  become: true
+
+- name: "sshd : enable"
+  service:
+    name: ssh
+    enabled: yes
+  become: true
+
+- name: "sshd : restart"
+  service:
+    name: ssh
+    state: restarted
+  become: true
+  changed_when: false

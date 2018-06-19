@@ -1,0 +1,59 @@
+- name: "updater : determine if geoipupdate is installed"
+  stat:
+    path: /usr/local/bin/geoipupdate
+  register: geoip_executable
+
+- name: "updater : determine installed geoipupdate version"
+  shell: "/usr/local/bin/geoipupdate -V 2>&1 | cut -d ' ' -f 2"
+  register: geoip_version
+  when: geoip_executable.stat.exists|default(false)
+  changed_when: false
+
+- block:
+  - name: "updater : install build requirements"
+    apt:
+      name:
+      - build-essential
+      - libcurl4-gnutls-dev
+      - libz-dev
+      state: present
+    become: true
+
+  - name: "updater : create source directory"
+    file:
+      path: "~/geoip-src"
+      mode: 0755
+      state: directory
+
+  - name: "updater : download geoipupdate/{{ geoip.version }}"
+    get_url:
+      url: "https://github.com/maxmind/geoipupdate/releases/download/v{{ geoip.version }}/geoipupdate-{{ geoip.version }}.tar.gz"
+      dest: "~/geoip-src/geoipupdate-{{ geoip.version }}.tar.gz"
+
+  - name: "updater : unpack geoipupdate/{{ geoip.version }}"
+    unarchive:
+      remote_src: yes
+      src: "~/geoip-src/geoipupdate-{{ geoip.version }}.tar.gz"
+      dest: "~/geoip-src/"
+
+  - name: "updater : configure geoipupdate/{{ geoip.version }}"
+    command: "./configure --prefix=/usr/local"
+    args:
+      chdir: "geoip-src/geoipupdate-{{ geoip.version }}"
+
+  - name: "updater : compile geoipupdate/{{ geoip.version }}"
+    command: "make"
+    args:
+      chdir: "geoip-src/geoipupdate-{{ geoip.version }}"
+
+  - name: "updater : install geoipupdate/{{ geoip.version }}"
+    command: "make install"
+    args:
+      chdir: "geoip-src/geoipupdate-{{ geoip.version }}"
+    become: true
+
+  - name: "updater : initial run of geoipupdate"
+    command: /usr/local/bin/geoipupdate
+    become: true
+
+  when: geoip_version.skipped|default(false) or geoip_version.stdout|version_compare(geoip.version, '<')

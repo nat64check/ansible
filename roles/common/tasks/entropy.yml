@@ -1,0 +1,13 @@
+- name: "entropy : install haveged"
+  package:
+    name: haveged
+    state: present
+  become: true
+
+- name: "entropy : enable and start haveged"
+  systemd:
+    name: haveged
+    daemon_reload: true
+    enabled: yes
+    state: started
+  become: true

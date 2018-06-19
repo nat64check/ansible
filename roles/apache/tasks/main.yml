@@ -1,0 +1,17 @@
+- block:
+  - import_tasks: packages.yml
+    tags: packages
+
+  - import_tasks: modules.yml
+    tags: modules
+
+  - import_tasks: tls.yml
+    tags: tls
+
+  - import_tasks: security.yml
+    tags: security
+
+  - import_tasks: firewall.yml
+    tags: firewall
+
+  tags: apache

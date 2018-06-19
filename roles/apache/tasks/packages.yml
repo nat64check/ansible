@@ -1,0 +1,15 @@
+- name: "packages : add repository for Ondřej Surý's Apache2 packages"
+  apt_repository:
+    repo: "ppa:ondrej/apache2"
+  become: true
+
+- name: "packages : install packages"
+  package:
+    name:
+    - apache2
+    - libapache2-mod-md
+    - libapache2-mod-security2
+    - modsecurity-crs
+    state: present
+  become: true
+  notify: "restart apache"

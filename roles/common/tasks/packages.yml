@@ -1,0 +1,47 @@
+- name: "packages : remove unnecessary packages"
+  package:
+    name: "{{ lookup('flattened', pkg_remove.values()).split(',')|difference(lookup('flattened', pkg_install.values()).split(',')) }}"
+    state: absent
+  become: true
+
+- name: "packages : install useful packages"
+  package:
+    name: "{{ lookup('flattened', pkg_install.values()).split(',') }}"
+    state: present
+  become: true
+
+- block:
+  - name: "packages : install vm-tools"
+    package:
+      name: "open-vm-tools"
+      state: present
+
+  - name: "packages : enable and start vm-tools"
+    service:
+      name: open-vm-tools
+      enabled: true
+      state: started
+
+  become: true
+  when: ansible_virtualization_type == 'VMware'
+
+- block:
+  - name: "packages : install qemu-guest-agent"
+    package:
+      name: "qemu-guest-agent"
+      state: present
+
+  - name: "packages : enable and start qemu-guest-agent"
+    service:
+      name: qemu-guest-agent
+      enabled: true
+      state: started
+
+  become: true
+  when: ansible_virtualization_type == 'kvm'
+
+- name: "packages : upgrade"
+  apt:
+    upgrade: yes
+  become: true
+  tags: upgrade

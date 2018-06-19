@@ -1,0 +1,21 @@
+- name: "ansible-deps : remove conflicting packages"
+  package:
+    name:
+    - ufw
+    state: absent
+  become: true
+
+- name: "ansible-deps : install packages"
+  package:
+    name:
+    - firewalld
+    state: present
+  become: true
+
+- name: "ansible-deps : install selinux packages"
+  package:
+    name:
+    - libselinux-python
+    state: present
+  become: true
+  when: (ansible_selinux.status is not defined and ansible_selinux) or (ansible_selinux.status is defined and ansible_selinux.status == 'enabled')

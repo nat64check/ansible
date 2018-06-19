@@ -1,0 +1,46 @@
+- name: "ntp : install chrony"
+  package:
+    name: chrony
+    state: present
+  become: true
+
+- name: "ntp : get current settings"
+  command: "timedatectl status"
+  args:
+    warn: false
+  register: timedatectl_status
+  changed_when: false
+
+- name: "ntp : set timezone"
+  command: "timedatectl set-timezone {{ timezone }}"
+  args:
+    warn: false
+  become: true
+  when: "'Time zone: ' + timezone not in timedatectl_status.stdout"
+
+- name: "ntp : set ntp to true"
+  command: "timedatectl set-ntp true"
+  args:
+    warn: false
+  become: true
+  when: "'service active: yes' not in timedatectl_status.stdout and 'NTP synchronized: yes' not in timedatectl_status.stdout"
+
+- name: "ntp : enable chrony"
+  service:
+    name: chrony
+    enabled: yes
+  become: true
+
+- name: "ntp : restart chrony"
+  # Restart is required in case the server is a VM that has just woken up and *thinks* its time is still synced
+  service:
+    name: chrony
+    state: restarted
+  become: true
+  changed_when: false
+
+- name: "ntp : make sure the clock is in sync"
+  command: "chronyc waitsync"
+  args:
+    warn: false
+  changed_when: false

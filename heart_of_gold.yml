@@ -1,0 +1,4 @@
+- hosts: heart_of_golds
+  roles:
+  - common
+  - django

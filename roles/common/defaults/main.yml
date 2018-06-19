@@ -1,0 +1,131 @@
+issue:
+  font: doom
+  title: NAT64Check
+  subtitle:
+
+timezone: UTC
+
+pv_devices: []
+
+volume_groups: {}
+
+logical_volumes: {}
+
+nameservers:
+- 8.8.8.8
+- 8.8.4.4
+- 2001:4860:4860::8888
+- 2001:4860:4860::8844
+
+librenms:
+  enabled: false
+  server:
+  token:
+  snmp_user:
+  agents: []
+  snmp_extensions:
+    distro:
+      script: distro
+      oid: .1.3.6.1.4.1.2021.7890.1
+    entropy:
+      script: entropy.sh
+    osupdate:
+      script: os-updates.sh
+    mailq:
+      script: postfix-queues
+    postfixdetailed:
+      script: postfixdetailed
+
+snmp:
+  users: {}
+  internal_user_password:
+  location: Unknown
+  contact: Sander Steffann <sander@steffann.nl>
+
+interfaces: {}
+
+trusted_addresses: []
+
+pkg_install:
+  default:
+  - apt-transport-https
+  - aptitude
+  - bash-completion
+  - bind9utils
+  - bzip2
+  - curl
+  - deltarpm
+  - gcc
+  - joe
+  - links
+  - lsof
+  - mc
+  - mlocate
+  - net-tools
+  - pflogsumm
+  - postfix
+  - psmisc
+  - screen
+  - tcpdump
+  - telnet
+  - tmux
+  - tshark
+  - unzip
+  - wget
+  - zip
+
+pkg_remove:
+  default:
+  - aic94xx-firmware
+  - alsa-firmware
+  - alsa-lib
+  - alsa-tools-firmware
+  - bind-libs-lite
+  - debian-goodies
+  - dhclient
+  - dracut-network
+  - glib-networking 
+  - gsettings-desktop-schemas 
+  - ivtv-firmware
+  - iwl1000-firmware
+  - iwl100-firmware
+  - iwl105-firmware
+  - iwl135-firmware
+  - iwl2000-firmware
+  - iwl2030-firmware
+  - iwl3160-firmware
+  - iwl3945-firmware
+  - iwl4965-firmware
+  - iwl5000-firmware
+  - iwl5150-firmware
+  - iwl6000-firmware
+  - iwl6000g2a-firmware
+  - iwl6000g2b-firmware
+  - iwl6050-firmware
+  - iwl7260-firmware
+  - iwl7265-firmware
+  - kexec-tools
+  - laptop-detect
+  - libgudev1
+  - libndp
+  - libsoup
+  - libxml2-utils
+  - NetworkManager
+  - NetworkManager-libnm
+  - NetworkManager-team
+  - NetworkManager-tui
+  - NetworkManager-wifi
+  - ntfs-3g
+  - pexpect
+  - popularity-contest
+  - ppp
+  - python-pexpect
+  - sgml-base
+  - tasksel
+  - tuned
+  - virt-what
+  - w3m
+  - wireless-tools
+  - wpasupplicant
+  - wpa_supplicant
+  - xml-core

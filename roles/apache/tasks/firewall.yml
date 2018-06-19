@@ -1,0 +1,10 @@
+- name: "firewall : open ports"
+  firewalld:
+    permanent: yes
+    immediate: yes
+    service: "{{ item }}"
+    state: enabled
+  with_items:
+  - http
+  - https
+  become: true

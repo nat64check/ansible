@@ -1,0 +1,44 @@
+- name: "modules : find active modules"
+  find:
+    path: /etc/apache2/mods-enabled
+    file_type: link
+    patterns: "*.load"
+  register: apache_mpm
+
+- name: "modules : disable other MPMs"
+  apache2_module:
+    name: "{{ item }}"
+    state: absent
+    ignore_configcheck: yes
+  become: yes
+  with_items: "{{ apache_mpm.files | map(attribute='path') | map('basename') | map('splitext') | map('first') | map('regex_search', '^mpm_.*') | select | difference([apache.mpm]) }}"
+  notify: "restart apache"
+
+- name: "modules : enable modules"
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  become: yes
+  with_items:
+  - "{{ apache.mpm }}"
+  - alias
+  - expires
+  - headers
+  - http2
+  - rewrite
+  - security2
+  - ssl
+  when: "item not in apache_mpm.files | map(attribute='path') | map('basename') | map('splitext') | map('first')"
+  notify: "restart apache"
+
+- name: "modules : disable modules"
+  apache2_module:
+    name: "{{ item }}"
+    state: absent
+  become: yes
+  ignore_errors: yes
+  with_items:
+  - cgi
+  - cgid
+  when: "item in apache_mpm.files | map(attribute='path') | map('basename') | map('splitext') | map('first')"
+  notify: "restart apache"

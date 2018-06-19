@@ -1,0 +1,14 @@
+- block:
+  - import_role:
+      name: apache
+
+  - import_tasks: python.yml
+    tags: python
+
+  - import_tasks: wsgi.yml
+    tags: wsgi
+
+  - import_tasks: sites.yml
+    tags: sites
+
+  tags: django

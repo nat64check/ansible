@@ -1,0 +1,26 @@
+ansible_python_interpreter: /usr/bin/python3
+
+snmp:
+  contact: "Sander Steffann <sander@nat64check.org>"
+
+librenms:
+  enabled: true
+  server: monitoring.nat64check.org
+
+ntp:
+  servers:
+    # chime0.surfnet.nl
+  - 2001:610:511:3222:192:87:222:123
+  - 192.87.222.123
+    # ntp4.bit.nl
+  - 2001:7b8:3:32:213:136::252
+  - 213.136.0.252
+    # x.ns.gin.ntt.net
+  - 2001:418:3ff::53
+  - 129.250.35.250
+    # ntp01.solcon.nl
+  - 2001:9e0:4:32::250
+  - 212.45.32.250
+    # ntp03.solcon.nl
+  - 2001:9e0:8:802::80
+  - 83.247.2.80

@@ -1,0 +1,20 @@
+[Unit]
+Description=Jool SIIT and NAT64 service
+Wants=network.target
+After=network.target
+Before=bird.service bird6.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+Environment=JOOL_CONF=/etc/jool.json
+EnvironmentFile=-/etc/sysconfig/jool
+
+ExecStart=/sbin/modprobe jool
+ExecStart=/usr/local/bin/jool --file=${JOOL_CONF}
+ExecReload=/usr/local/bin/jool --file=${JOOL_CONF}
+ExecStop=/usr/sbin/rmmod jool
+
+[Install]
+WantedBy=multi-user.target

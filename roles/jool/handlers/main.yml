@@ -1,0 +1,11 @@
+- name: "restart jool"
+  service:
+    name: jool
+    state: restarted
+  become: true
+
+- name: "reload jool"
+  service:
+    name: jool
+    state: reloaded
+  become: true

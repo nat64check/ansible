@@ -1,0 +1,42 @@
+- name: "security : generate security.conf"
+  template:
+    src: security.conf.j2
+    dest: /etc/apache2/conf-available/security.conf
+  become: true
+  notify: "restart apache"
+
+- name: "security : install modsecurity.conf"
+  copy:
+    src: "/etc/modsecurity/modsecurity.conf-recommended"
+    dest: "/etc/modsecurity/modsecurity.conf"
+    force: no
+    remote_src: yes
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: true
+  notify: "restart apache"
+
+- name: "security : enable engine"
+  lineinfile:
+    dest: "/etc/modsecurity/modsecurity.conf"
+    regexp: "(?i)^#?SecRuleEngine "
+    line: "SecRuleEngine {{ modsecurity.enabled | ternary('On', 'DetectionOnly') }}"
+  become: true
+  notify: "restart apache"
+
+- name: "security : set request size limit"
+  lineinfile:
+    dest: "/etc/modsecurity/modsecurity.conf"
+    regexp: "(?i)^#?SecRequestBodyLimit "
+    line: "SecRequestBodyLimit {{ modsecurity.body_limit }}"
+  become: true
+  notify: "restart apache"
+
+- name: "security : set request size limit without files"
+  lineinfile:
+    dest: "/etc/modsecurity/modsecurity.conf"
+    regexp: "(?i)^#?SecRequestBodyNoFilesLimit "
+    line: "SecRequestBodyNoFilesLimit {{ modsecurity.body_limit_no_files }}"
+  become: true
+  notify: "restart apache"

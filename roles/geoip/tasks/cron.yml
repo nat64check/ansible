@@ -1,0 +1,6 @@
+- name: "cron : schedule updates"
+  file:
+    src: /usr/local/bin/geoipupdate
+    dest: /etc/cron.weekly/geoipupdate
+    state: link
+  become: true

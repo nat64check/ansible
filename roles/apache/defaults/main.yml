@@ -1,0 +1,10 @@
+apache:
+  admin: sander@steffann.nl
+  mpm: mpm_event
+  md:
+    agreement: https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf
+
+modsecurity:
+  enabled: true
+  body_limit: 13107200
+  body_limit_no_files: 131072

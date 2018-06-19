@@ -1,0 +1,163 @@
+- name: "partitions : check existing partitions"
+  parted:
+    device: "/dev/{{ item }}"
+    state: info
+    unit: KiB
+  become: true
+  register: partitions
+  # Bit of a weird query. Take this data: {"data": ["sdb", "sdc"], "more": ["sdd"]}
+  # Then * gives lists of all the values: [["sdb","sdc"],["sdd"]]
+  # And [] flattens one level and reduces this to ["sdb","sdc","sdd"]
+  # Try it on http://jmespath.org
+  with_items: "{{ volume_groups | json_query('*[]') }}"
+
+- name: "partitions : create partition"
+  parted:
+    device: "/dev/{{ item }}"
+    label: gpt
+    name: PV
+    number: 1
+    flags: lvm
+    state: present
+  become: true
+  with_items: "{{ partitions.results | selectattr('partitions', 'equalto', []) | map(attribute='item') | list }}"
+
+- name: "partitions : create volume groups"
+  lvg:
+    vg: "{{ item.key }}"
+    pvs: "{{ item.value | map('regex_replace', '^(.*)$', '/dev/\\g<1>1') | list }}"
+    pesize: 128
+  become: true
+  with_dict: "{{ volume_groups }}"
+
+- name: "partitions : create logical volumes"
+  lvol:
+    lv: "{{ item }}"
+    vg: "{{ logical_volumes[item].vg }}"
+    size: "{{ logical_volumes[item].size }}"
+    shrink: no
+  become: true
+  with_items: "{{ logical_volumes.keys() }}"
+
+- name: "partitions : create file systems"
+  filesystem:
+    dev: "/dev/{{ logical_volumes[item].vg }}/{{ item }}"
+    fstype: xfs
+  become: true
+  with_items: "{{ logical_volumes.keys() }}"
+
+- name: "partitions : check existing mounts"
+  command: "mountpoint -q {{ logical_volumes[item].mount }}"
+  with_items: "{{ logical_volumes.keys() }}"
+  when: logical_volumes[item].mount | default(false)
+  register: mount_points
+  failed_when: false
+  changed_when: mount_points.rc != 0
+
+- name: "partitions : check for open files"
+  command: "lsof +D {{ logical_volumes[item].mount }} -t"
+  become: true
+  with_items: "{{ mount_points.results | selectattr('changed') | map(attribute='item') | list }}"
+  register: open_files
+  changed_when: open_files.stdout_lines
+  failed_when: open_files.rc not in [0, 1]
+
+- block:
+  - name: "partitions : determine processes with open files"
+    shell: "ps -p {{ open_files.results | json_query('[].stdout_lines[]') | join(',')  }}"
+    changed_when: false
+    register: open_files_processes
+
+  - name: "partitions : manually stop services"
+    pause:
+      prompt: |-
+        Please stop the processes with the following PIDs:
+        {{ open_files_processes.stdout }}
+        They have open files where we want to mount the filesystem.
+        Press enter when you have done so, or press ctrl-c to abort
+
+  - name: "partitions : recheck for open files"
+    command: "lsof +D {{ logical_volumes[item].mount }} -t"
+    become: true
+    with_items: "{{ mount_points.results | selectattr('changed') | map(attribute='item') | list }}"
+    register: recheck_open_files
+    changed_when: recheck_open_files.stdout_lines
+    failed_when: recheck_open_files.rc not in [0, 1]
+
+  - name: "partitions : abort when files are still open"
+    fail:
+      msg: "There are still files open by processes {{ recheck_open_files.results | json_query('[].stdout_lines[]') | join(', ') }}"
+    when: recheck_open_files.changed
+
+  when: open_files.changed
+
+- name: "partitions : check existing directory"
+  stat:
+    path: "{{ logical_volumes[item].mount }}"
+  become: true
+  with_items: "{{ mount_points.results | selectattr('changed') | map(attribute='item') | list }}"
+  when: logical_volumes[item].mount | default(false)
+  register: existing_directory
+
+- name: "partitions : move existing directory aside"
+  command: "mv {{ logical_volumes[item].mount }} {{ logical_volumes[item].mount }}_orig"
+  become: true
+  with_items: "{{ existing_directory.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+- name: "partitions : make sure mount points exist"
+  file:
+    path: "{{ logical_volumes[item].mount }}"
+    state: directory
+  become: true
+  with_items: "{{ logical_volumes.keys() }}"
+  when: logical_volumes[item].mount | default(false)
+
+- name: "partitions : make sure logical volume is mounted"
+  mount:
+    src: "/dev/{{ logical_volumes[item].vg }}/{{ item }}"
+    name: "{{ logical_volumes[item].mount }}"
+    fstype: xfs
+    state: mounted
+  become: true
+  with_items: "{{ logical_volumes.keys() }}"
+  when: logical_volumes[item].mount | default(false)
+
+- name: "partitions : make sure the file system is large enough"
+  filesystem:
+    dev: "/dev/{{ logical_volumes[item].vg }}/{{ item }}"
+    fstype: xfs
+    resizefs: yes
+  become: true
+  with_items: "{{ logical_volumes.keys() }}"
+  when: logical_volumes[item].mount | default(false)
+
+- name: "partitions : set owner and mode of replaced directory"
+  file:
+    path: "{{ logical_volumes[item].mount }}"
+    state: directory
+    # Convoluted way to get the data, but it gives much nicer screen output
+    mode: "{{ existing_directory.results | selectattr('item', 'equalto', item) | map(attribute='stat.mode') | first }}"
+    owner: "{{ existing_directory.results | selectattr('item', 'equalto', item) | map(attribute='stat.uid') | first }}"
+    group: "{{ existing_directory.results | selectattr('item', 'equalto', item) | map(attribute='stat.gid') | first }}"
+  become: true
+  with_items: "{{ existing_directory.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+- name: "partitions : move old files to new volume"
+  shell: "shopt -s dotglob; mv -b {{ logical_volumes[item].mount }}_orig/* {{ logical_volumes[item].mount }}"
+  become: true
+  with_items: "{{ existing_directory.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+- name: "partitions : remove old directory"
+  file:
+    path: "{{ logical_volumes[item].mount }}_orig"
+    state: absent
+  become: true
+  with_items: "{{ existing_directory.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+- name: "partitions : manually start services"
+  pause:
+    prompt: |-
+      You can now restart the processes that you previously stopped.
+      Press enter when you have done so, or press ctrl-c to abort
+
+  when: open_files_processes is defined and open_files_processes.stdout is defined and open_files_processes.stdout

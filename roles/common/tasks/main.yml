@@ -1,0 +1,42 @@
+- import_tasks: ansible-deps.yml
+  tags: ansible-deps
+
+- import_tasks: hostname.yml
+  tags: hostname
+
+- import_tasks: entropy.yml
+  tags: entropy
+
+- import_tasks: partitions.yml
+  tags: partitions
+
+- import_tasks: interfaces.yml
+  tags: interfaces
+  when: interfaces
+
+- import_tasks: ntp.yml
+  tags: ntp
+
+- import_tasks: firewall.yml
+  tags: firewall
+
+- import_tasks: snmpd.yml
+  tags: snmpd
+
+- import_tasks: librenms.yml
+  when: librenms.enabled
+  tags: librenms
+
+- import_tasks: users.yml
+  tags: users
+
+- import_tasks: sshd.yml
+  tags: sshd
+
+- import_tasks: packages.yml
+  tags: packages
+
+- import_tasks: reboot.yml
+  tags:
+  - reboot
+  - upgrade

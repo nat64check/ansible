@@ -1,0 +1,55 @@
+- name: "interfaces : stop NetworkManager"
+  service:
+    name: "NetworkManager"
+    state: stopped
+  become: true
+  failed_when: false
+
+- name: "interfaces : get rid of NetworkManager"
+  package:
+    name: "NetworkManager"
+    state: absent
+  become: true
+
+- block:
+  - name: "interfaces : netplan : generate configuration"
+    template:
+      src: "netplan.j2"
+      dest: "/etc/netplan/10-ansible.yaml"
+      owner: root
+      group: root
+      mode: u=rw,g=r,o=r
+    become: true
+    register: ifcfg
+
+  - name: "interfaces : netplan : remove cloud-init"
+    file:
+      name: /etc/netplan/50-cloud-init.yaml
+      state: absent
+    become: true
+
+  - name: "interfaces : netplan : restart"
+    shell: "netplan apply"
+    become: true
+    when: ifcfg.changed
+
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_version is version('18.04', '>=')
+
+- block:
+  - name: "interfaces : ifupdown : generate configuration"
+    template:
+      src: "templates/interfaces.j2"
+      dest: "/etc/network/interfaces"
+      owner: root
+      group: root
+      mode: u=rw,g=,o=
+    become: true
+    register: ifcfg
+
+  - name: "interfaces : Debian/Ubuntu : ifupdown : restart"
+    shell: "ifdown {{ item }} && ifup {{ item }}"
+    become: true
+    with_items: "{{ interfaces.keys() }}"
+    when: ifcfg.changed
+
+  when: ansible_distribution != "Ubuntu" or ansible_distribution_version is version('18.04', '<')

@@ -1,0 +1,16 @@
+- name: "hostname : make sure the system knows its name"
+  hostname:
+    name: "{{ inventory_hostname }}"
+  become: true
+
+- name: "hostname : update /etc/hosts"
+  template:
+    src: templates/hosts.j2
+    dest: /etc/hosts
+  become: true
+
+- name: "hostname : update resolv.conf"
+  template:
+    src: templates/resolv.conf.j2
+    dest: /etc/resolv.conf
+  become: true

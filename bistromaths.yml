@@ -1,0 +1,4 @@
+- hosts: bistromaths
+  roles:
+  - common
+  - bistromath

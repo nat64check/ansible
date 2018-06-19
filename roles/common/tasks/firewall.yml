@@ -1,0 +1,60 @@
+- name: "firewall : systemd reload"
+  systemd:
+    daemon_reload: true
+    name: firewalld
+  become: true
+  when: ansible_service_mgr == "systemd"
+
+- name: "firewall : enable and start"
+  service:
+    name: firewalld
+    enabled: yes
+    state: started
+  become: true
+
+- name: "firewall : get currently trusted sources"
+  command: "firewall-cmd --permanent --zone=trusted --list-sources"
+  register: currently_trusted
+  changed_when: false
+  become: true
+
+- name: "firewall : remove untrusted sources"
+  firewalld:
+    zone: trusted
+    source: "{{ item }}"
+    state: disabled
+    permanent: true
+    immediate: true
+  become: true
+  with_items: "{{ currently_trusted.stdout.split() | difference(trusted_addresses | map('ipsubnet') | list ) }}"
+
+- name: "firewall : add trusted sources"
+  firewalld:
+    zone: trusted
+    source: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  become: true
+  with_items: "{{ trusted_addresses | map('ipsubnet') | list | difference(currently_trusted.stdout.split()) }}"
+
+- name: "firewall : reload"
+  command: firewall-cmd --reload
+  become: true
+  changed_when: false
+
+- name: "firewall : disable ssh for the public zone"
+  firewalld:
+    service: ssh
+    state: disabled
+    permanent: true
+    immediate: true
+  become: true
+
+- name: "firewall : disable dhcpv6-client for the public zone"
+  firewalld:
+    service: dhcpv6-client
+    state: disabled
+    permanent: true
+    immediate: true
+  become: true

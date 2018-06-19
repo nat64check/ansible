@@ -1,0 +1,44 @@
+- name: "snmpd : install required packages"
+  package:
+    name:
+    - snmpd
+    state: present
+  become: true
+
+- name: "snmpd : generate configuration"
+  template:
+    src: "templates/snmpd.conf.j2"
+    dest: "/etc/snmp/snmpd.conf"
+    owner: root
+    group: root
+    mode: u=rw,g=,o=
+  become: true
+
+- name: "snmpd : disable for the public zone"
+  firewalld:
+    service: snmp
+    state: disabled
+    permanent: true
+    immediate: true
+  become: true
+  tags: firewall
+
+- name: "snmpd : systemd reload"
+  systemd:
+    name: snmpd
+    daemon_reload: true
+  become: true
+  when: ansible_service_mgr == "systemd"
+
+- name: "snmpd : enable"
+  service:
+    name: snmpd
+    enabled: yes
+  become: true
+
+- name: "snmpd : restart"
+  service:
+    name: snmpd
+    state: restarted
+  become: true
+  changed_when: false

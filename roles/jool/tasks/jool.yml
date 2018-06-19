@@ -1,0 +1,94 @@
+- name: "jool : determine if installed"
+  stat:
+    path: /usr/local/bin/jool
+  register: jool_executable
+  changed_when: false
+
+- name: "jool : determine installed version"
+  shell: "/usr/local/bin/jool --version"
+  register: jool_version
+  when: jool_executable.stat.exists is defined and jool_executable.stat.exists
+  changed_when: false
+
+- block:
+  - name: "jool : install build requirements"
+    package:
+      name:
+      - build-essential
+      - dkms
+      - libnl-genl-3-dev
+      - linux-headers-generic
+      - pkg-config
+      state: present
+    become: true
+
+  - name: "jool : create source directory"
+    file:
+      path: "~/jool-src"
+      mode: 0755
+      state: directory
+
+  - name: "jool : download jool/{{ jool.version }}"
+    get_url:
+      url: "https://github.com/NICMx/releases/raw/master/Jool/Jool-{{ jool.version }}.zip"
+      dest: "~/jool-src/Jool-{{ jool.version }}.zip"
+
+  - name: "jool : unpack jool/{{ jool.version }}"
+    unarchive:
+      remote_src: yes
+      src: "~/jool-src/Jool-{{ jool.version }}.zip"
+      dest: "~/jool-src/"
+
+  - name: "jool : stop translation"
+    service:
+      name: jool
+      state: stopped
+    become: true
+    notify: "restart jool"
+    ignore_errors: yes
+
+  - name: "jool : DKMS install jool/{{ jool.version }}"
+    command: "dkms install jool-src/Jool-{{ jool.version }}"
+    register: jool_dkms_install
+    become: true
+    changed_when: jool_dkms_install.rc == 0
+    failed_when: jool_dkms_install.rc not in [0,3]
+    notify: "reload jool"
+
+  - name: "jool : configure jool/{{ jool.version }} tools"
+    shell: "cd ~/jool-src/Jool-{{ jool.version }}/usr; ./configure"
+
+  - name: "jool : compile jool/{{ jool.version }} tools"
+    shell: "cd ~/jool-src/Jool-{{ jool.version }}/usr; make"
+
+  - name: "jool : install jool/{{ jool.version }} tools"
+    shell: "cd jool-src/Jool-{{ jool.version }}/usr; make install"
+    become: true
+
+  when: (jool_version.skipped is defined and jool_version.skipped) or jool_version.stdout is version_compare(jool.version, '<')
+
+- name: "jool : install systemd unit files"
+  copy:
+    src: "files/jool.service"
+    dest: "/etc/systemd/system/jool.service"
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: "jool : generate configuration"
+  template:
+    src: "templates/jool.json.j2"
+    dest: "/etc/jool.json"
+    owner: root
+    group: root
+    mode: 0644
+  notify: "reload jool"
+  become: true
+
+- name: "jool : enable"
+  systemd:
+    daemon_reload: true
+    name: jool.service
+    enabled: yes
+  become: true

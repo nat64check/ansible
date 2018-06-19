@@ -1,0 +1,7 @@
+- name: "packages : install command line tools"
+  apt:
+    name:
+    - libmaxminddb0
+    - libmaxminddb-dev
+    state: present
+  become: true

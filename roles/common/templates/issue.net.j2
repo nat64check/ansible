@@ -1,0 +1,14 @@
+{{ lookup('pipe', 'figlet -f ' + issue.font|quote + ' ' + issue.title|quote) }}
+{% if issue.subtitle %}
+{{ lookup('pipe', 'figlet -f ' + issue.font|quote + ' ' + issue.subtitle|quote) }}
+{% endif %}
+
+This is {{ inventory_hostname }}.
+
+WARNING: This service is restricted to authorized users only. All activities
+on this system are logged, including this login attempt. Unauthorized access
+will be fully investigated and reported to the appropriate law enforcement
+agencies.
+
+Disconnect now if you are not an authorized user.
+

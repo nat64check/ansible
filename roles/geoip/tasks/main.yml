@@ -1,0 +1,11 @@
+- block:
+  - import_tasks: packages.yml
+    tags: packages
+
+  - import_tasks: updater.yml
+    tags: updater
+
+  - import_tasks: cron.yml
+    tags: cron
+
+  tags: geoip

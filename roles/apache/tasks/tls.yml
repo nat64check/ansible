@@ -1,0 +1,25 @@
+- name: "config : set the ServerAdmin for the fallback website"
+  lineinfile:
+    dest: "/etc/apache2/sites-available/000-default.conf"
+    regexp: "(?i)ServerAdmin "
+    line: "\tServerAdmin {{ apache.admin }}"
+  become: true
+  notify: "restart apache"
+
+- name: "tls : harden TLS configuration"
+  template:
+    src: "templates/tls.conf.j2"
+    dest: "/etc/apache2/conf-available/tls.conf"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: true
+  notify: "restart apache"
+
+- name: "tls : enable TLS configuration"
+  file:
+    src: "../conf-available/tls.conf"
+    dest: "/etc/apache2/conf-enabled/tls.conf"
+    state: link
+  become: true
+  notify: "restart apache"

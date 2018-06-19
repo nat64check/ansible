@@ -1,0 +1,40 @@
+# Don't log all that nonsense
+dontLogTCPWrappersConnects 1
+
+#  Listen for connections on all interfaces (both IPv4 *and* IPv6)
+agentAddress udp:161,udp6:[::]:161
+
+# SNMP users
+{% for user in snmp.users.keys() %}
+createUser {{ user }} SHA "{{ snmp.users[user].password }}" AES "{{ snmp.users[user].password }}"
+rouser {{ user }}
+{% endfor %}
+
+# Contact information
+sysLocation {{ snmp.location }}
+sysContact {{ snmp.contact }}
+
+# Standard end-host behaviour
+sysServices 72
+
+# Enable internal monitoring
+createUser internalUser SHA "{{ snmp.internal_user_password }}"
+rouser internalUser
+iquerySecName internalUser
+
+# Active the standard monitoring entries
+defaultMonitors yes
+linkUpDownNotifications yes
+
+# Keep track of disk space
+includeAllDisks 10%
+
+# Unacceptable 1-, 5-, and 15-minute load averages
+load 12 10 5
+
+# Log authentication errors
+authtrapenable 1
+
+{% for name, extension in librenms.snmp_extensions | dictsort %}
+extend {{ extension.oid|default('') }} {{ name }} /opt/librenms-agent/snmp/{{ extension.script }}
+{% endfor %}

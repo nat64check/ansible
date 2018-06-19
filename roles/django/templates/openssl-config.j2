@@ -1,0 +1,16 @@
+[req]
+default_bits            = 2048
+default_keyfile         = privkey.pem
+distinguished_name      = req_distinguished_name
+x509_extensions         = SAN
+string_mask             = utf8only
+
+[req_distinguished_name]
+commonName              = Common Name (server FQDN)
+commonName_max          = 64
+
+[SAN]
+basicConstraints        = CA:true
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
+subjectAltName          = DNS:{{ django_sites[item].hostnames | join(',DNS:') }}

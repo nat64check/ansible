@@ -1,0 +1,36 @@
+network:
+  version: 2
+  ethernets:
+{% for ifname,ifcfg in interfaces|dictsort %}
+{% if not ifcfg.shutdown|default(false) and '.' not in ifname %}
+    {{ ifname }}:
+{% if ifcfg.dynamic | default(false) %}
+      dhcp4: on
+      dhcp6: on
+      accept-ra: on
+{% else %}
+      accept-ra: off
+      addresses:
+{% for address in ifcfg.addresses %}
+      - {{ address }}
+{% endfor %}
+
+{% if ifcfg.gateway is defined and ifcfg.gateway.ipv4 is defined %}
+      gateway4: {{ ifcfg.gateway.ipv4 }}
+{% endif %}
+{% if ifcfg.gateway is defined and ifcfg.gateway.ipv6 is defined %}
+      gateway6: {{ ifcfg.gateway.ipv6 }}
+{% endif %}
+
+{% if nameservers %}
+      nameservers:
+        addresses:
+{% for nameserver in nameservers %}
+        - {{ nameserver }}
+{% endfor %}
+        search:
+        - {{ '.'.join(inventory_hostname.split('.')[1:]) }}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endfor %}

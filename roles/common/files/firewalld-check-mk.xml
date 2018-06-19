@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+    <short>Check-mk</short>
+    <description>LibreNMS check-mk</description>
+    <port protocol="tcp" port="6556"/>
+</service>

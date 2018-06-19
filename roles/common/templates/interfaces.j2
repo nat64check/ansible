@@ -1,0 +1,54 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+{% for ifname,ifcfg in interfaces|dictsort %}
+{% if not ifcfg.shutdown|default(false) %}
+# Physical network interface
+auto {{ ifname }}
+
+{% if ifcfg.dynamic | default(false) %}
+iface {{ ifname }} inet dhcp
+{% else %}
+{% for address in ifcfg.addresses|ipv4 %}
+iface {{ ifname }} inet static
+{% if '.' in ifname %}
+    vlan-raw-device {{ ifname.split('.') | first }}
+{% endif %}
+    address {{ address|ipaddr('address') }}
+    netmask {{ address|ipaddr('prefix') }}
+{% if loop.index0 == 0 and ifcfg.gateway is defined and ifcfg.gateway.ipv4 is defined %}
+    gateway {{ ifcfg.gateway.ipv4 }}
+    dns-search {{ '.'.join(inventory_hostname.split('.')[1:]) }}
+{% if nameservers|ipv4 %}
+    dns-nameservers {{ ' '.join(nameservers|ipv4) }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if ifcfg.dynamic | default(false) %}
+iface {{ ifname }} inet6 auto
+{% else %}
+{% for address in ifcfg.addresses|ipv6 %}
+iface {{ ifname }} inet6 static
+{% if '.' in ifname %}
+    vlan-raw-device {{ ifname.split('.') | first }}
+{% endif %}
+    address {{ address|ipaddr('address') }}
+    netmask {{ address|ipaddr('prefix') }}
+{% if loop.index0 == 0 and ifcfg.gateway is defined and ifcfg.gateway.ipv6 is defined %}
+    gateway {{ ifcfg.gateway.ipv6 }}
+    dns-search {{ '.'.join(inventory_hostname.split('.')[1:]) }}
+{% if nameservers|ipv6 %}
+    dns-nameservers {{ ' '.join(nameservers|ipv6) }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endif %}
+{% endfor %}
