@@ -40,6 +40,13 @@
   become: true
   notify: "restart xinetd"
 
+- name: "librenms : link mail log"
+  file:
+    src: /var/log/mail.log
+    dest: /var/log/maillog
+    state: link
+  become: true
+
 - name: "librenms : activate agent modules"
   file:
     src: /opt/librenms-agent/agent-local/{{ item }}
