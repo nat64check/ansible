@@ -53,6 +53,7 @@ pkg_install:
   - bash-completion
   - bind9utils
   - bzip2
+  - ca-certificates
   - curl
   - deltarpm
   - gcc
@@ -66,6 +67,7 @@ pkg_install:
   - postfix
   - psmisc
   - screen
+  - software-properties-common
   - tcpdump
   - telnet
   - tmux
@@ -85,7 +87,8 @@ pkg_remove:
   - dhclient
   - dracut-network
   - glib-networking 
-  - gsettings-desktop-schemas 
+  - gsettings-desktop-schemas
+  - irqbalance 
   - ivtv-firmware
   - iwl1000-firmware
   - iwl100-firmware
@@ -116,11 +119,13 @@ pkg_remove:
   - NetworkManager-tui
   - NetworkManager-wifi
   - ntfs-3g
+  - open-iscsi
   - pexpect
   - popularity-contest
   - ppp
   - python-pexpect
   - sgml-base
+  - snapd
   - tasksel
   - tuned
   - virt-what
