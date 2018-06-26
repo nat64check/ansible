@@ -1,0 +1,24 @@
+MDomain {{ inventory_hostname }}
+
+<VirtualHost *:80>
+    ServerName {{ inventory_hostname }}
+    ServerAdmin admin@nat64check.org
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName {{ inventory_hostname }}
+    ServerAdmin admin@nat64check.org
+
+    Protocols h2 http:/1.1
+
+    SSLEngine on
+
+    ProxyPass /static/ !
+    ProxyPass / uwsgi://localhost:8000/
+    ProxyPassReverse / uwsgi://localhost:8000/
+
+    Alias /static/ /var/www/static/
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

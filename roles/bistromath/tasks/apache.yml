@@ -1,0 +1,36 @@
+- name: "apache : make sure proxy_uwsgi exists"
+  copy:
+    content: |
+      # Depends: proxy
+      LoadModule proxy_uwsgi_module /usr/lib/apache2/modules/mod_proxy_uwsgi.so
+    dest: /etc/apache2/mods-available/proxy_uwsgi.load
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: "apache : enable proxy modules"
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+    ignore_configcheck: yes
+  become: yes
+  with_items:
+  - proxy
+  - proxy_uwsgi
+  notify: "restart apache"
+
+- name: "apache : generate trillian config"
+  template:
+    src: apache-site.conf.j2
+    dest: /etc/apache2/sites-available/trillian.conf
+    trim_blocks: no
+  become: yes
+  notify: "restart apache"
+
+- name: "apache : activate trillian config"
+  file:
+    src: ../sites-available/trillian.conf
+    dest: /etc/apache2/sites-enabled/trillian.conf
+    state: link
+  become: true

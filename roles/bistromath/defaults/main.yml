@@ -1,0 +1,25 @@
+postgresql:
+  password:
+
+trillian:
+  django:
+    secret_key:
+    debug: false
+
+marvin:
+  scale: 1
+  v4only:
+    dns:
+    - 8.8.8.8
+    - 8.8.4.4
+  v6only:
+    dns:
+    - 2001:4860:4860::8888
+    - 2001:4860:4860::8844
+  nat64:
+    dns:
+    - 2001:4860:4860::6464
+    - 2001:4860:4860::64
+
+docker_network:
+  ipv6_prefix: 2001:db8:a:b::/64

@@ -1,0 +1,36 @@
+- name: "docker : create nat64check directories for Trillian"
+  file:
+    name: "{{ item }}"
+    state: directory
+    owner: nat64check
+    group: nat64check
+    mode: 0755
+  become: true
+  with_items:
+  - /home/nat64check/trillian
+  - /home/nat64check/trillian/metrics
+  - /home/nat64check/trillian/spool
+  - /var/www/static
+
+- name: "docker : create nat64check docker-compose directory"
+  file:
+    name: /etc/docker/compose/nat64check
+    state: directory
+    owner: root
+    group: root
+    mode: 0750
+  become: true
+
+- name: "docker : deploy nat64check docker-compose file"
+  template:
+    src: docker-compose-nat64check.yml.j2
+    dest: /etc/docker/compose/nat64check/docker-compose.yml
+  become: true
+  notify: "restart nat64check"
+
+- name: "docker : enable and start nat64check docker-compose service"
+  systemd:
+    name: docker-compose@nat64check.service
+    enabled: yes
+    state: started
+  become: true

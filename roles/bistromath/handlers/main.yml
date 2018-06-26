@@ -1,0 +1,11 @@
+- name: "restart nat64check"
+  service:
+    name: docker-compose@nat64check.service
+    state: restarted
+  become: true
+
+- name: "restart apache"
+  service:
+    name: apache2
+    state: restarted
+  become: true

@@ -2,7 +2,19 @@
   - import_role:
       name: jool
 
+  - import_role:
+      name: docker
+
+  - import_role:
+      name: apache
+
   - import_tasks: firewall.yml
     tags: firewall
+
+  - import_tasks: docker.yml
+    tags: docker
+
+  - import_tasks: apache.yml
+    tags: apache
 
   tags: bistromath
