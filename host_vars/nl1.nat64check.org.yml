@@ -2,3 +2,6 @@ snmp:
   location: "Solcon, Laan van de Ram 39, Apeldoorn, NL"
 
 timezone: Europe/Amsterdam
+
+docker_network:
+  ipv6_prefix: 2a00:8642:1000:e000::/64

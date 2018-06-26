@@ -2,3 +2,6 @@ snmp:
   location: "Go6lab, Frankovo naselje 59, Skofja Loka, SI"
 
 timezone: Europe/Ljubljana
+
+docker_network:
+  ipv6_prefix: 2001:67c:27e4:65::/64
