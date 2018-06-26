@@ -40,3 +40,10 @@
     line: "SecRequestBodyNoFilesLimit {{ modsecurity.body_limit_no_files }}"
   become: true
   notify: "restart apache"
+
+- name: "security : disable filtering on HTTP method"
+  lineinfile:
+    dest: "/etc/modsecurity/crs/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+    line: "SecRuleRemoveById 911100"
+  become: true
+  notify: "restart apache"
