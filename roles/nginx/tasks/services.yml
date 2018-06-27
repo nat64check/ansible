@@ -1,6 +1,0 @@
-- name: "services : enable nginx server"
-  service:
-    name: nginx
-    enabled: yes
-    state: restarted
-  become: true
