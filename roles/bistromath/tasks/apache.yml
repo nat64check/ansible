@@ -1,13 +1,10 @@
-- name: "apache : make sure proxy_uwsgi exists"
-  copy:
-    content: |
-      # Depends: proxy
-      LoadModule proxy_uwsgi_module /usr/lib/apache2/modules/mod_proxy_uwsgi.so
-    dest: /etc/apache2/mods-available/proxy_uwsgi.load
-    owner: root
-    group: root
-    mode: 0644
+- name: "apache : install proxy packages"
+  package:
+    name:
+    - libapache2-mod-proxy-uwsgi
+    state: present
   become: true
+  notify: "restart apache"
 
 - name: "apache : enable proxy modules"
   apache2_module:
