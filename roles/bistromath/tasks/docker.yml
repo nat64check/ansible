@@ -23,7 +23,7 @@
 
 - name: "docker : deploy nat64check docker-compose file"
   template:
-    src: docker-compose-nat64check.yml.j2
+    src: docker-compose-bistromath.yml.j2
     dest: /etc/docker/compose/nat64check/docker-compose.yml
   become: true
   notify: "restart nat64check"

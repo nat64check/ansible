@@ -1,10 +1,10 @@
-[heart_of_golds]
-zaphod.nat64check.org
+[heartofgolds]
+core.nat64check.org
 
 [bistromaths]
 nl1.nat64check.org
 si1.nat64check.org
 
 [servers:children]
-heart_of_golds
+heartofgolds
 bistromaths

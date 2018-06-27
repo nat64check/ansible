@@ -1,2 +1,2 @@
 - import_playbook: bistromaths.yml
-- import_playbook: heart_of_gold.yml
+- import_playbook: heartofgolds.yml
