@@ -1,0 +1,4 @@
+- name: docker
+  src: git@github.com:nat64check/ansible-role-docker.git
+  scm: git
+  version: master
