@@ -1,8 +1,0 @@
-- block:
-  - import_tasks: packages.yml
-    tags: packages
-
-  - import_tasks: compose.yml
-    tags: compose
-
-  tags: docker
