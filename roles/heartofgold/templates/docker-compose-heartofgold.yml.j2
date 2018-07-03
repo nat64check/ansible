@@ -1,0 +1,59 @@
+version: "2.3"
+
+services:
+  db:
+    image: mdillon/postgis:10
+    restart: always
+    ports:
+    - "::1:5432:5432"
+    - "127.0.0.1:5432:5432"
+    user: "{{ ansible_user_uid }}"
+    volumes:
+    - /etc/passwd:/etc/passwd:ro
+    - /etc/group:/etc/group:ro
+    - pgsql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: {{ postgresql.password }}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+  memcached:
+    image: memcached:alpine
+    restart: always
+
+  zaphod:
+    image: nat64check/zaphod
+    restart: always
+    depends_on:
+    - memcached
+    - db
+    ports:
+    - "::1:8000:8000"
+    - "127.0.0.1:8000:8000"
+    user: "{{ ansible_user_uid }}"
+    volumes:
+    - /etc/passwd:/etc/passwd:ro
+    - /etc/group:/etc/group:ro
+    - /var/www/static:/app/static
+    - /home/nat64check/zaphod/metrics:/app/metrics
+    - /home/nat64check/zaphod/spool:/app/spool
+
+    environment:
+      DJANGO_SECRET_KEY: {{ zaphod.django.secret_key }}
+      DJANGO_DEBUG: {{ '1' if zaphod.django.debug else '0' }}
+      PGHOST: db
+      PGUSER: zaphod
+      PGPASSWORD: {{ postgresql.password }}
+
+volumes:
+  pgsql:
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      "com.docker.network.bridge.name": nat64check
+    enable_ipv6: true
+    ipam:
+      config:
+      - subnet: {{ docker_network.ipv6_prefix }}
+        gateway: {{ docker_network.ipv6_prefix | ipaddr(1) | ipaddr('address') }}

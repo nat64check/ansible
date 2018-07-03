@@ -1,0 +1,10 @@
+postgresql:
+  password:
+
+zaphod:
+  django:
+    secret_key:
+    debug: false
+
+docker_network:
+  ipv6_prefix: 2001:db8:a:b::/64

@@ -1,0 +1,33 @@
+- name: "apache : install proxy packages"
+  package:
+    name:
+    - libapache2-mod-proxy-uwsgi
+    state: present
+  become: true
+  notify: "restart apache"
+
+- name: "apache : enable proxy modules"
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+    ignore_configcheck: yes
+  become: yes
+  with_items:
+  - proxy
+  - proxy_uwsgi
+  notify: "restart apache"
+
+- name: "apache : generate zaphod configs"
+  template:
+    src: apache-site.conf.j2
+    dest: /etc/apache2/sites-available/zaphod.conf
+    trim_blocks: no
+  become: yes
+  notify: "restart apache"
+
+- name: "apache : activate zaphod config"
+  file:
+    src: ../sites-available/zaphod.conf
+    dest: /etc/apache2/sites-enabled/zaphod.conf
+    state: link
+  become: true

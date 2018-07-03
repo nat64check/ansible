@@ -1,0 +1,19 @@
+- name: "firewall : block forwarding from public interface by default"
+  command: "firewall-cmd --permanent --direct --add-rule ipv6 filter FWDI_public_deny 1000 -j REJECT --reject-with icmp6-adm-prohibited"
+  register: firewall_cmd
+  changed_when: "'ALREADY_ENABLED' not in firewall_cmd.stderr"
+  become: true
+
+- name: "firewall : reload"
+  command: firewall-cmd --reload
+  become: true
+  changed_when: false
+
+- name: "firewall : add nat64check interface to trusted zone"
+  firewalld:
+    zone: trusted
+    interface: nat64check
+    state: enabled
+    permanent: true
+    immediate: true
+  become: true
