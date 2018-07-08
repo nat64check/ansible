@@ -7,4 +7,4 @@ zaphod:
     debug: false
 
 docker_network:
-  ipv6_prefix: 2001:db8:a:b::/64
+  ipv6_prefix: 2001:db8:a:c::/64

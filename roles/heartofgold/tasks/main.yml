@@ -14,4 +14,4 @@
   - import_tasks: apache.yml
     tags: apache
 
-  tags: bistromath
+  tags: heartofgold
