@@ -1,2 +1,6 @@
 issue:
   subtitle: "Heart of Gold"
+
+modsecurity:
+  body_limit: 13107200
+  body_limit_no_files: 13107200
