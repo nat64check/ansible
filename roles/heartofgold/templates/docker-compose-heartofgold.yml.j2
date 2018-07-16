@@ -38,6 +38,7 @@ services:
     - /home/nat64check/zaphod/spool:/app/spool
 
     environment:
+      MY_HOSTNAME: {{ inventory_hostname }}
       DJANGO_SECRET_KEY: {{ zaphod.django.secret_key }}
       DJANGO_DEBUG: {{ '1' if zaphod.django.debug else '0' }}
       PGHOST: db

@@ -41,6 +41,7 @@ services:
     - /home/nat64check/trillian/spool:/app/spool
 
     environment:
+      MY_HOSTNAME: {{ inventory_hostname }}
       DJANGO_SECRET_KEY: {{ trillian.django.secret_key }}
       DJANGO_DEBUG: {{ '1' if trillian.django.debug else '0' }}
       PGHOST: db
