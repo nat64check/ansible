@@ -28,9 +28,17 @@
   become: true
   notify: "restart nat64check"
 
+- name: "docker : pull latest images"
+  command: "docker-compose pull"
+  args:
+    chdir: /etc/docker/compose/nat64check
+  register: docker_pull
+  become: true
+  changed_when: "'Downloaded' in docker_pull.stdout"
+
 - name: "docker : enable and start nat64check docker-compose service"
   systemd:
     name: docker-compose@nat64check.service
     enabled: yes
-    state: started
+    state: "{% if docker_pull.changed %}restarted{% else %}started{% endif %}"
   become: true

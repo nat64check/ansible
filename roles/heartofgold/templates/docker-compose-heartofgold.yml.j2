@@ -33,14 +33,24 @@ services:
     volumes:
     - /etc/passwd:/etc/passwd:ro
     - /etc/group:/etc/group:ro
+{% if zaphod.developer %}
+    - /home/{{ zaphod.developer }}/zaphod:/app
+{% endif %}
     - /var/www/static:/app/static
     - /home/nat64check/zaphod/metrics:/app/metrics
     - /home/nat64check/zaphod/spool:/app/spool
 
     environment:
       MY_HOSTNAME: {{ inventory_hostname }}
+      FRONTEND_BASE_URL: {{ zaphod.frontend_base_url }}
       DJANGO_SECRET_KEY: {{ zaphod.django.secret_key }}
       DJANGO_DEBUG: {{ '1' if zaphod.django.debug else '0' }}
+      EMAIL_HOST: {{ zaphod.django.email.host }}
+      EMAIL_PORT: {{ zaphod.django.email.port }}
+      EMAIL_HOST_USER: {{ zaphod.django.email.username }}
+      EMAIL_HOST_PASSWORD: {{ zaphod.django.email.password }}
+      EMAIL_SECURITY: {{ zaphod.django.email.security }}
+      EMAIL_SENDER: {{ zaphod.django.email.sender }}
       PGHOST: db
       PGUSER: zaphod
       PGPASSWORD: {{ postgresql.password }}

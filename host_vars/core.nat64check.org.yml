@@ -14,3 +14,13 @@ timezone: Europe/Amsterdam
 
 docker_network:
   ipv6_prefix: 2a00:8642:1000:e001::/64
+
+zaphod:
+  frontend_base_url:
+  developer: sander
+  django:
+    debug: True
+    email:
+      sender: zaphod@nat64check.org
+      host: mail.sintact.nl
+      security: tls

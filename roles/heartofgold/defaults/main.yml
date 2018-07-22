@@ -2,9 +2,18 @@ postgresql:
   password:
 
 zaphod:
+  frontend_base_url:
+  developer:
   django:
     secret_key:
     debug: false
+    email:
+      sender:
+      host:
+      port:
+      username:
+      password:
+      security:
 
 docker_network:
   ipv6_prefix: 2001:db8:a:c::/64

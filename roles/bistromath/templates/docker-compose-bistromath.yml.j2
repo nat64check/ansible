@@ -36,6 +36,9 @@ services:
     volumes:
     - /etc/passwd:/etc/passwd:ro
     - /etc/group:/etc/group:ro
+{% if trillian.developer %}
+    - /home/{{ trillian.developer }}/trillian:/app
+{% endif %}
     - /var/www/static:/app/static
     - /home/nat64check/trillian/metrics:/app/metrics
     - /home/nat64check/trillian/spool:/app/spool
@@ -77,6 +80,24 @@ services:
     environment:
     - MARVIN_MODE=v6only
     - MARVIN_DNS={{ marvin.v6only.dns|join(',') }}
+    cap_add:
+    - NET_ADMIN
+    networks:
+      default:
+        aliases:
+        - marvin
+
+  marvin_dualstack:
+    image: nat64check/marvin
+    restart: always
+    scale: {{ marvin.dualstack.scale | default(marvin.scale | default(1)) }}
+    dns:
+{% for dns in marvin.dualstack.dns %}
+    - {{ dns }}
+{% endfor %}
+    environment:
+    - MARVIN_MODE=dual-stack
+    - MARVIN_DNS={{ marvin.dualstack.dns|join(',') }}
     cap_add:
     - NET_ADMIN
     networks:
