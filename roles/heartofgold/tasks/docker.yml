@@ -35,6 +35,7 @@
   register: docker_pull
   become: true
   changed_when: "'Downloaded' in docker_pull.stdout"
+  tags: upgrade
 
 - name: "docker : enable and start nat64check docker-compose service"
   systemd:
@@ -42,3 +43,4 @@
     enabled: yes
     state: "{% if docker_pull.changed %}restarted{% else %}started{% endif %}"
   become: true
+  tags: upgrade
