@@ -21,4 +21,16 @@ MDomain {{ inventory_hostname }}
 
 	ErrorLog ${APACHE_LOG_DIR}/error.log
 	CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    <LocationMatch "^/api/v1/instanceruns/[0-9]+/$">
+        <IfModule mod_security2.c>
+            # This rule gives false positives:
+            # "Remote Command Execution: Windows FOR/IF Command Found"
+            SecRuleRemoveById 932140
+
+            # These give PCRE errors because of the amount of data
+            SecRuleRemoveById 932150
+            SecRuleRemoveById 942190
+        </IfModule>
+    </LocationMatch>
 </VirtualHost>
