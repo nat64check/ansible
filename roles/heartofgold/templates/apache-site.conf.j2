@@ -1,5 +1,63 @@
 MDomain {{ inventory_hostname }}
 
+<MDomainSet check.{{ inventory_hostname }} ds.{{ inventory_hostname }} v4.{{ inventory_hostname }} v6.{{ inventory_hostname }}>
+    MDRequireHttps off
+</MDomainSet>
+
+<VirtualHost *:80>
+    ServerName check.{{ inventory_hostname }}
+    ServerAlias ds.{{ inventory_hostname }}
+    ServerAlias v4.{{ inventory_hostname }}
+    ServerAlias v6.{{ inventory_hostname }}
+{%- for address in lookup('dig', 'v4.'+inventory_hostname, 'qtype=A', wantlist=True) %}
+    ServerAlias {{ address }}
+{%- endfor %}
+{%- for address in lookup('dig', 'v6.'+inventory_hostname, 'qtype=AAAA', wantlist=True) %}
+    ServerAlias {{ address }}
+{%- endfor %}
+    ServerAdmin admin@nat64check.org
+
+    ProxyPass /static/ !
+    ProxyPass / uwsgi://localhost:8000/
+    ProxyPassReverse / uwsgi://localhost:8000/
+
+    Alias /static/ /var/www/static/
+
+    RewriteEngine on
+    RewriteCond "%{REQUEST_URI}" "!^/self-check/"
+    RewriteCond "%{REQUEST_URI}" "!^/static/"
+    RewriteRule ".*" "/self-check/" [R,L]
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName check.{{ inventory_hostname }}
+    ServerAlias ds.{{ inventory_hostname }}
+    ServerAlias v4.{{ inventory_hostname }}
+    ServerAlias v6.{{ inventory_hostname }}
+    ServerAdmin admin@nat64check.org
+
+    Protocols h2 http:/1.1
+
+    SSLEngine on
+
+    ProxyPass /static/ !
+    ProxyPass / uwsgi://localhost:8000/
+    ProxyPassReverse / uwsgi://localhost:8000/
+
+    Alias /static/ /var/www/static/
+
+    RewriteEngine on
+    RewriteCond "%{REQUEST_URI}" "!^/self-check/"
+    RewriteCond "%{REQUEST_URI}" "!^/static/"
+    RewriteRule ".*" "/self-check/" [R,L]
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
 <VirtualHost *:80>
     ServerName {{ inventory_hostname }}
     ServerAdmin admin@nat64check.org
@@ -19,14 +77,17 @@ MDomain {{ inventory_hostname }}
 
     Alias /static/ /var/www/static/
 
-	ErrorLog ${APACHE_LOG_DIR}/error.log
-	CustomLog ${APACHE_LOG_DIR}/access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     <LocationMatch "^/api/v1/instanceruns/[0-9]+/$">
         <IfModule mod_security2.c>
             # This rule gives false positives:
             # "Remote Command Execution: Windows FOR/IF Command Found"
             SecRuleRemoveById 932140
+
+            # XSS Filter - Category 2: Event Handler Vector
+            SecRuleRemoveById 941120
 
             # These give PCRE errors because of the amount of data
             SecRuleRemoveById 932150
