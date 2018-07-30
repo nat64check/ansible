@@ -24,9 +24,9 @@ MDomain {{ inventory_hostname }}
     Alias /static/ /var/www/static/
 
     RewriteEngine on
-    RewriteCond "%{REQUEST_URI}" "!^/self-check/"
+    RewriteCond "%{REQUEST_URI}" "!^/self-test/"
     RewriteCond "%{REQUEST_URI}" "!^/static/"
-    RewriteRule ".*" "/self-check/" [R,L]
+    RewriteRule ".*" "/self-test/" [R,L]
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
@@ -50,9 +50,9 @@ MDomain {{ inventory_hostname }}
     Alias /static/ /var/www/static/
 
     RewriteEngine on
-    RewriteCond "%{REQUEST_URI}" "!^/self-check/"
+    RewriteCond "%{REQUEST_URI}" "!^/self-test/"
     RewriteCond "%{REQUEST_URI}" "!^/static/"
-    RewriteRule ".*" "/self-check/" [R,L]
+    RewriteRule ".*" "/self-test/" [R,L]
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
@@ -88,6 +88,10 @@ MDomain {{ inventory_hostname }}
 
             # XSS Filter - Category 2: Event Handler Vector
             SecRuleRemoveById 941120
+
+            # Possible Remote File Inclusion (RFI) Attack
+            SecRuleRemoveById 980130
+            SecRuleRemoveById 931100
 
             # These give PCRE errors because of the amount of data
             SecRuleRemoveById 932150
